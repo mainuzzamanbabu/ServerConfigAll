@@ -25,6 +25,62 @@ HTTPS=true pm2 start npm --name "my-project" -- start
 
 The configuration File: 
 
+#nginx config file for Nextjs App
+#place in /etc/nginx/sites-available/name_of_config_file
+server {
+        listen 80;
+        server_name server_url/IP;
+
+        gzip on;
+        gzip_proxied any;
+        gzip_types application/javascript application/x-javascript text/css text/plain text/xml application/xml application/xml+rss;
+
+        gzip_comp_level 5;
+        gzip_buffers 16 8k;
+        gzip_min_length 256;
+
+        location /_next/static/ {
+                alias /path/.next/static/;
+                expires 365d;
+                access_log off;
+        }
+
+        location / {
+                proxy_pass http://127.0.0.1:3000; #change to 3001 for second app, but make sure second nextjs app starts on new port in packages.json "start": "next start -p 3001",
+                proxy_http_version 1.1;
+                proxy_set_header Upgrade $http_upgrade;
+                proxy_set_header Connection 'upgrade';
+                proxy_set_header Host $host;
+                proxy_cache_bypass $http_upgrade;
+        }
+        location /writebot/_next/static/ {
+                alias /home/aiasstproject/AiAsstFinalFront/.next/static/;
+                expires 365d;
+                access_log off;
+        }
+        location /writebot/ {
+        proxy_pass http://127.0.0.1:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection 'upgrade';
+        proxy_set_header Host $host;
+        proxy_cache_bypass $http_upgrade;
+        rewrite ^/writebot(.*)$ $1 break;
+    }
+        location /serverapi/ {
+                proxy_pass http://127.0.0.1:8080/;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+    }
+        location /aiapi/ {
+                proxy_pass http://127.0.0.1:8000/;
+                proxy_set_header Host $host;
+                proxy_set_header X-Real-IP $remote_addr;
+                proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+    }
+
+
+}
 
 
 
